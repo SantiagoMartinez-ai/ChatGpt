@@ -21,3 +21,5 @@ Tienes dos opciones; elige la que prefieras:
 - Rueda del ratón o pellizca en móviles para hacer zoom.
 
 No se necesitan dependencias adicionales: Three.js se carga desde un CDN.
+
+Si la escena no aparece, prueba a abrirla desde un servidor local (opción 2) y asegúrate de que tu navegador tenga WebGL habilitado.

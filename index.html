@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pirámide 3D interactiva</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --text: #e2e8f0;
+      --accent: #f97316;
+      --grid: rgba(148, 163, 184, 0.35);
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at 20% 20%, #1f2937, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.5rem;
+      box-sizing: border-box;
+    }
+
+    h1 {
+      margin: 0;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+
+    p.description {
+      margin: 0;
+      text-align: center;
+      max-width: 700px;
+      line-height: 1.6;
+      color: #cbd5e1;
+    }
+
+    #scene-container {
+      position: relative;
+      width: min(100%, 900px);
+      aspect-ratio: 16 / 9;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.05));
+      border-radius: 20px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    #tips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem 1rem;
+      justify-content: center;
+      font-size: 0.95rem;
+      color: #cbd5e1;
+    }
+
+    #tips span {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.35rem 0.75rem;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Pirámide 3D interactiva</h1>
+    <p class="description">
+      Explora y manipula libremente la pirámide 3D. Usa el ratón o el dedo para rotar, desplazar y hacer zoom.
+    </p>
+  </header>
+
+  <div id="scene-container"></div>
+
+  <div id="tips">
+    <span>🖱️ Arrastra con el botón izquierdo para rotar</span>
+    <span>🖱️ Botón derecho para desplazar la cámara</span>
+    <span>🖱️ Rueda para acercar/alejar</span>
+    <span>📱 Pellizca y arrastra en móviles</span>
+  </div>
+
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164/build/three.module.js";
+    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.164/examples/jsm/controls/OrbitControls.js";
+
+    const container = document.getElementById("scene-container");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1021);
+    scene.fog = new THREE.Fog(0x0b1021, 15, 35);
+
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+    camera.position.set(6, 5, 8);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.shadowMap.enabled = true;
+    container.appendChild(renderer.domElement);
+
+    const hemiLight = new THREE.HemisphereLight(0xf1f5f9, 0x0b1021, 0.8);
+    scene.add(hemiLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(6, 8, 4);
+    dirLight.castShadow = true;
+    dirLight.shadow.mapSize.set(1024, 1024);
+    scene.add(dirLight);
+
+    const grid = new THREE.GridHelper(80, 40, 0x475569, 0x1f2937);
+    grid.material.opacity = 0.3;
+    grid.material.transparent = true;
+    scene.add(grid);
+
+    const baseGeometry = new THREE.ConeGeometry(3, 4, 4, 1);
+    const pyramidMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf97316,
+      metalness: 0.2,
+      roughness: 0.35,
+      emissive: 0x1f2937,
+      flatShading: true,
+    });
+    const pyramid = new THREE.Mesh(baseGeometry, pyramidMaterial);
+    pyramid.position.y = 2;
+    pyramid.castShadow = true;
+    pyramid.receiveShadow = true;
+    scene.add(pyramid);
+
+    const base = new THREE.Mesh(
+      new THREE.BoxGeometry(8, 0.25, 8),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.1, roughness: 0.8 })
+    );
+    base.position.y = 0.1;
+    base.receiveShadow = true;
+    scene.add(base);
+
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enablePan = true;
+    controls.minDistance = 4;
+    controls.maxDistance = 30;
+    controls.target.set(0, 2, 0);
+    controls.update();
+
+    function onResize() {
+      const { clientWidth, clientHeight } = container;
+      camera.aspect = clientWidth / clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(clientWidth, clientHeight);
+    }
+
+    window.addEventListener("resize", onResize);
+
+    function animate() {
+      requestAnimationFrame(animate);
+      pyramid.rotation.y += 0.0025;
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
